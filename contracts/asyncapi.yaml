@@ -1,0 +1,22 @@
+asyncapi: 3.0.0
+info:
+  title: Open Telecommunications Reference Events
+  version: 0.1.0
+channels:
+  domainEvents:
+    address: open-telecommunications.domain-events.v1
+    messages:
+      domainEvent:
+        $ref: '#/components/messages/DomainEvent'
+operations:
+  receiveDomainEvent:
+    action: receive
+    channel:
+      $ref: '#/channels/domainEvents'
+components:
+  messages:
+    DomainEvent:
+      name: NetworkServiceChanged
+      contentType: application/cloudevents+json
+      payload:
+        $ref: './cloudevents/domain-event.schema.json'

@@ -1,0 +1,17 @@
+{
+  "specversion": "1.0",
+  "id": "synthetic-0001",
+  "source": "/open-telecommunications/reference",
+  "type": "org.openindustries.open-telecommunications.NetworkServiceChanged",
+  "time": "2026-08-13T00:00:00Z",
+  "subject": "network-service/synthetic-001",
+  "correlation_id": "00000000-0000-4000-8000-000000000001",
+  "causation_id": "00000000-0000-4000-8000-000000000000",
+  "schema_version": "1.0",
+  "tenant_id": "synthetic-tenant",
+  "data_classification": "internal",
+  "data": {
+    "id": "synthetic-001",
+    "status": "CREATED"
+  }
+}

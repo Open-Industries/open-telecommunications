@@ -1,0 +1,25 @@
+name: validate
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install validation dependency
+        run: python -m pip install --disable-pip-version-check pyyaml
+      - name: Validate YAML and JSON
+        run: |
+          python - <<'PY'
+          import json, pathlib, yaml
+          for p in pathlib.Path('.').rglob('*.json'):
+              json.loads(p.read_text())
+          for p in pathlib.Path('.').rglob('*.yaml'):
+              yaml.safe_load(p.read_text())
+          PY
