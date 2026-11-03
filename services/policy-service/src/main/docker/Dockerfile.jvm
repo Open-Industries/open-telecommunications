@@ -1,0 +1,21 @@
+####
+# Containerfile — Policy Service
+# Multi-stage build (12-Factor V: Build, Release, Run are strictly separated).
+####
+FROM registry.access.redhat.com/ubi9/openjdk-21:1.20 AS build
+WORKDIR /work
+COPY . /work
+USER 0
+RUN mvn -q -pl services/policy-service -am package -DskipTests
+
+FROM registry.access.redhat.com/ubi9/openjdk-21-runtime:1.20
+ENV LANGUAGE='en_US:en'
+COPY --from=build --chown=185 /work/services/policy-service/target/quarkus-app/lib/ /deployments/lib/
+COPY --from=build --chown=185 /work/services/policy-service/target/quarkus-app/*.jar /deployments/
+COPY --from=build --chown=185 /work/services/policy-service/target/quarkus-app/app/ /deployments/app/
+COPY --from=build --chown=185 /work/services/policy-service/target/quarkus-app/quarkus/ /deployments/quarkus/
+EXPOSE 8083
+USER 185
+ENV JAVA_OPTS_APPEND="-Dquarkus.http.host=0.0.0.0 -Djava.util.logging.manager=org.jboss.logmanager.LogManager"
+ENV JAVA_APP_JAR="/deployments/quarkus-run.jar"
+ENTRYPOINT [ "/opt/jboss/container/java/run/run-java.sh" ]
