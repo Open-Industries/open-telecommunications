@@ -1,0 +1,30 @@
+# Knative Triggers: route domain CloudEvents from the Broker to the functions.
+apiVersion: eventing.knative.dev/v1
+kind: Trigger
+metadata: { name: usage-rating, namespace: telecom }
+spec:
+  broker: default
+  filter:
+    attributes: { type: session.usage-recorded }
+  subscriber:
+    ref: { apiVersion: serving.knative.dev/v1, kind: Service, name: usage-rating }
+---
+apiVersion: eventing.knative.dev/v1
+kind: Trigger
+metadata: { name: network-anomaly-scoring, namespace: telecom }
+spec:
+  broker: default
+  filter:
+    attributes: { type: network.kpi-reported }
+  subscriber:
+    ref: { apiVersion: serving.knative.dev/v1, kind: Service, name: network-anomaly-scorer }
+---
+apiVersion: eventing.knative.dev/v1
+kind: Trigger
+metadata: { name: sla-evaluation, namespace: telecom }
+spec:
+  broker: default
+  filter:
+    attributes: { type: slice.kpi-reported }
+  subscriber:
+    ref: { apiVersion: serving.knative.dev/v1, kind: Service, name: sla-compliance-evaluator }

@@ -1,22 +1,166 @@
-asyncapi: 3.0.0
+asyncapi: 2.6.0
 info:
-  title: Open Telecommunications Reference Events
-  version: 0.1.0
+  title: Open Telecommunications — Domain Events
+  version: 1.0.0
+  description: >
+    CloudEvents 1.0 envelopes published by the platform's bounded contexts.
+    Consumers MUST be idempotent and tolerate unknown fields. Ordering is
+    guaranteed only per aggregate (the CloudEvent `subject`).
+    No event ever carries a permanent identifier in clear.
+servers:
+  production:
+    url: kafka://broker.telecom.svc.cluster.local:9092
+    protocol: kafka
+    description: Kafka-backed Knative Broker in production; Knative Broker abstraction elsewhere.
 channels:
-  domainEvents:
-    address: open-telecommunications.domain-events.v1
-    messages:
-      domainEvent:
-        $ref: '#/components/messages/DomainEvent'
-operations:
-  receiveDomainEvent:
-    action: receive
-    channel:
-      $ref: '#/channels/domainEvents'
+  subscriber.onboarded:
+    publish:
+      operationId: onSubscriberOnboarded
+      message: { $ref: '#/components/messages/SubscriberOnboarded' }
+  subscriber.suspended:
+    publish:
+      operationId: onSubscriberSuspended
+      message: { $ref: '#/components/messages/SubscriberStatusChanged' }
+  session.established:
+    publish:
+      operationId: onSessionEstablished
+      message: { $ref: '#/components/messages/SessionEstablished' }
+  session.released:
+    publish:
+      operationId: onSessionReleased
+      message: { $ref: '#/components/messages/SessionEstablished' }
+  session.usage-recorded:
+    publish:
+      operationId: onSessionUsageRecorded
+      message: { $ref: '#/components/messages/UsageRecorded' }
+  policy.activated:
+    publish:
+      operationId: onPolicyActivated
+      message: { $ref: '#/components/messages/PolicyActivated' }
+  charging.usage-charged:
+    publish:
+      operationId: onUsageCharged
+      message: { $ref: '#/components/messages/UsageCharged' }
+  charging.balance-insufficient:
+    publish:
+      operationId: onBalanceInsufficient
+      message: { $ref: '#/components/messages/UsageCharged' }
+  slice.activated:
+    publish:
+      operationId: onSliceActivated
+      message: { $ref: '#/components/messages/SliceStatusChanged' }
+  slice.decommissioned:
+    publish:
+      operationId: onSliceDecommissioned
+      message: { $ref: '#/components/messages/SliceStatusChanged' }
+  exposure.qod-created:
+    publish:
+      operationId: onQodCreated
+      message: { $ref: '#/components/messages/QodCreated' }
+  network.kpi-anomaly:
+    publish:
+      operationId: onNetworkKpiAnomaly
+      message: { $ref: '#/components/messages/KpiAnomaly' }
 components:
   messages:
-    DomainEvent:
-      name: NetworkServiceChanged
-      contentType: application/cloudevents+json
-      payload:
-        $ref: './cloudevents/domain-event.schema.json'
+    SubscriberOnboarded: { payload: { $ref: '#/components/schemas/CloudEventSubscriber' } }
+    SubscriberStatusChanged: { payload: { $ref: '#/components/schemas/CloudEventSubscriber' } }
+    SessionEstablished: { payload: { $ref: '#/components/schemas/CloudEventSession' } }
+    UsageRecorded: { payload: { $ref: '#/components/schemas/CloudEventUsage' } }
+    PolicyActivated: { payload: { $ref: '#/components/schemas/CloudEventPolicy' } }
+    UsageCharged: { payload: { $ref: '#/components/schemas/CloudEventUsage' } }
+    SliceStatusChanged: { payload: { $ref: '#/components/schemas/CloudEventSlice' } }
+    QodCreated: { payload: { $ref: '#/components/schemas/CloudEventQod' } }
+    KpiAnomaly: { payload: { $ref: '#/components/schemas/CloudEventKpi' } }
+  schemas:
+    CloudEventBase:
+      type: object
+      required: [specversion, id, source, type, time]
+      properties:
+        specversion: { type: string, enum: ['1.0'] }
+        id: { type: string, format: uuid }
+        source: { type: string, example: '/open-telecommunications/session-service' }
+        type: { type: string, example: 'session.established' }
+        subject: { type: string, description: Aggregate id (ordering key). }
+        time: { type: string, format: date-time }
+        datacontenttype: { type: string, enum: [application/json] }
+    CloudEventSubscriber:
+      allOf:
+        - { $ref: '#/components/schemas/CloudEventBase' }
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                subscriberId: { type: string, format: uuid }
+                plan: { type: string, enum: [PREPAID, POSTPAID, ENTERPRISE] }
+                status: { type: string, enum: [ACTIVE, SUSPENDED, CLOSED] }
+    CloudEventSession:
+      allOf:
+        - { $ref: '#/components/schemas/CloudEventBase' }
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                sessionId: { type: string, format: uuid }
+                subscriberId: { type: string, format: uuid }
+                snssai: { type: string, example: '1-000001' }
+                qosClass: { type: string, enum: [EMBB, URLLC, MMTC] }
+                status: { type: string, enum: [ESTABLISHED, RELEASED] }
+    CloudEventUsage:
+      allOf:
+        - { $ref: '#/components/schemas/CloudEventBase' }
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                accountId: { type: string, format: uuid }
+                serviceType: { type: string, enum: [DATA, VOICE, SMS] }
+                units: { type: integer, format: int64 }
+                chargeMinor: { type: integer, format: int64 }
+                currency: { type: string, pattern: '^[A-Z]{3}$' }
+    CloudEventPolicy:
+      allOf:
+        - { $ref: '#/components/schemas/CloudEventBase' }
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                policyRuleId: { type: string, format: uuid }
+                sliceType: { type: string, enum: [EMBB, URLLC, MMTC, ISAC] }
+    CloudEventSlice:
+      allOf:
+        - { $ref: '#/components/schemas/CloudEventBase' }
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                sliceId: { type: string, format: uuid }
+                snssai: { type: string, example: '1-000001' }
+                sliceType: { type: string, enum: [EMBB, URLLC, MMTC, ISAC] }
+                status: { type: string, enum: [PROVISIONED, ACTIVE, DECOMMISSIONED] }
+    CloudEventQod:
+      allOf:
+        - { $ref: '#/components/schemas/CloudEventBase' }
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                qodSessionId: { type: string, format: uuid }
+                qosProfile: { type: string, enum: [LOW_LATENCY, HIGH_THROUGHPUT, DEFAULT] }
+    CloudEventKpi:
+      allOf:
+        - { $ref: '#/components/schemas/CloudEventBase' }
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                cellId: { type: string }
+                score: { type: integer }
+                decision: { type: string, enum: [NORMAL, WARNING, CRITICAL] }

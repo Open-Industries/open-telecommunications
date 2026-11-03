@@ -1,7 +1,26 @@
-.PHONY: validate test
+# Open Telecommunications — developer entry points
+.PHONY: build test verify dev-subscriber dev-session dev-charging compose-up compose-down
 
-validate:
-	@python3 -c 'import json,pathlib; [json.loads(p.read_text()) for p in pathlib.Path(".").rglob("*.json")]; print("JSON valid")'
+build:
+	mvn -q package -DskipTests
 
-test: validate
-	@echo "Add executable contract, integration, resilience and performance tests under tests/."
+test:
+	mvn test
+
+verify:           ## Full verification (life-cycle gate G3)
+	mvn verify
+
+dev-subscriber:
+	mvn -pl services/subscriber-service quarkus:dev
+
+dev-session:
+	mvn -pl services/session-service quarkus:dev
+
+dev-charging:
+	mvn -pl services/charging-service quarkus:dev
+
+compose-up:
+	docker compose up -d
+
+compose-down:
+	docker compose down
