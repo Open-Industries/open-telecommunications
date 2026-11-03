@@ -1,0 +1,12 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: telecom
+resources:
+  - namespace.yaml
+  - subscriber-service.yaml
+  - session-service.yaml
+  - policy-service.yaml
+  - charging-service.yaml
+  - network-slice-service.yaml
+  - exposure-service.yaml
+  - notification-service.yaml

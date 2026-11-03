@@ -1,15 +1,6 @@
-# Domain model
+# Domain Model (summary)
 
-## Aggregate
-
-- Name: `network-service`
-- Primary event: `NetworkServiceChanged`
-- Required metadata: identifier, schema version, tenant, purpose, classification, correlation and causation.
-
-## Semantic governance
-
-All external values are mapped to a versioned canonical vocabulary. Transformations record source, target, rule version and provenance. Breaking changes require a new schema version and a documented coexistence period.
-
-## Data boundary
-
-Examples are synthetic. Real data must not be introduced without approved privacy, retention, residency and access policies.
+The normative domain model — ubiquitous language, bounded contexts, aggregates and
+invariants — lives in [`architecture/domain-model.md`](architecture/domain-model.md),
+as the Domain view (VP-4) of the Architecture Description (ISO/IEC/IEEE 42010). The
+3GPP role mapping is normative in [`telecom/3gpp-architecture.md`](telecom/3gpp-architecture.md).

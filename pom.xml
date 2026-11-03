@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>org.openindustries.telecom</groupId>
+  <artifactId>open-telecommunications-parent</artifactId>
+  <version>1.0.0-SNAPSHOT</version>
+  <packaging>pom</packaging>
+  <name>Open Telecommunications — Reference Telco Core Platform</name>
+  <description>Standard, generic telecommunications core: Quarkus microservices and serverless functions aligned to 3GPP (4G/5G), ITU-R IMT-2030 (6G framework), TM Forum ODA and ETSI NFV/MEC.</description>
+
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <maven.compiler.release>21</maven.compiler.release>
+    <quarkus.version>3.15.2</quarkus.version>
+    <surefire.version>3.5.1</surefire.version>
+  </properties>
+
+  <modules>
+    <module>services/subscriber-service</module>
+    <module>services/session-service</module>
+    <module>services/policy-service</module>
+    <module>services/charging-service</module>
+    <module>services/network-slice-service</module>
+    <module>services/exposure-service</module>
+    <module>services/notification-service</module>
+    <module>functions/usage-rating</module>
+    <module>functions/network-anomaly-scorer</module>
+    <module>functions/sla-compliance-evaluator</module>
+  </modules>
+
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>io.quarkus</groupId>
+        <artifactId>quarkus-bom</artifactId>
+        <version>${quarkus.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+
+  <build>
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <groupId>io.quarkus</groupId>
+          <artifactId>quarkus-maven-plugin</artifactId>
+          <version>${quarkus.version}</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-surefire-plugin</artifactId>
+          <version>${surefire.version}</version>
+        </plugin>
+      </plugins>
+    </pluginManagement>
+  </build>
+</project>

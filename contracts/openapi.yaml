@@ -1,41 +1,123 @@
 openapi: 3.1.0
 info:
-  title: Open Telecommunications Reference API
-  version: 0.1.0
-  description: Provider-neutral research contract for interoperable network and communications services.
+  title: Open Telecommunications — Reference Telco Core API (aggregate contract)
+  version: 1.0.0
+  description: >
+    Aggregate view of the platform's public REST contracts. The normative per-service
+    contracts are generated from code by Quarkus SmallRye OpenAPI at `/openapi` on each
+    service; CI diffs them against this file (see docs/api/api-standards.md).
+    Conventions: RFC 9457 errors, Idempotency-Key on creates, lifecycle transitions
+    take no body, money as integer minor units + ISO 4217 currency, permanent
+    identifiers never appear in clear.
 servers:
-  - url: https://api.example.org/open-telecommunications/v1
+  - url: https://api.operator.example/api/v1
+    description: Production (per adopter)
+security:
+  - bearerAuth: []
 paths:
-  /network-services/{id}:
-    get:
-      operationId: getNetworkService
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema: { type: string }
-        - name: X-Correlation-ID
-          in: header
-          required: true
-          schema: { type: string, format: uuid }
+  /subscribers:
+    post:
+      operationId: onboardSubscriber
+      summary: Onboard a subscriber (IMSI/SUPI validated, masked, never stored in clear)
       responses:
-        '200':
-          description: Domain resource
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/DomainResource'
-        '404': { description: Not found }
+        '201': { description: Created (response carries the masked identifier only) }
+        '400': { $ref: '#/components/responses/Problem' }
+  /subscribers/{id}/suspend:
+    post:
+      operationId: suspendSubscriber
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses:
+        '200': { description: SUSPENDED }
+        '409': { $ref: '#/components/responses/Problem' }
+  /sessions:
+    post:
+      operationId: establishSession
+      summary: Establish a PDU session (S-NSSAI + DNN + QoS class)
+      responses:
+        '201': { description: ESTABLISHED, synthetic address allocated }
+  /sessions/{id}/release:
+    post:
+      operationId: releaseSession
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses:
+        '200': { description: RELEASED }
+        '409': { $ref: '#/components/responses/Problem' }
+  /policies:
+    post:
+      operationId: createPolicy
+      summary: Create a policy rule (starts DRAFT)
+      responses:
+        '201': { description: Created }
+  /policies/{id}/activate:
+    post:
+      operationId: activatePolicy
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses:
+        '200': { description: ACTIVE }
+  /policies/evaluate:
+    post:
+      operationId: evaluatePolicy
+      summary: Evaluate a QoS request against active rules (ALLOWED / DEGRADED / DENIED + reason)
+      responses:
+        '200': { description: Decision }
+  /charging/accounts:
+    post:
+      operationId: openChargingAccount
+      summary: Open a prepaid charging account
+      responses:
+        '201': { description: Created }
+  /charging/accounts/{id}/usage:
+    post:
+      operationId: chargeUsage
+      summary: Rate and charge one usage event (422 if it would overdraw the balance)
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses:
+        '200': { description: Charged (usage record) }
+        '422': { $ref: '#/components/responses/Problem' }
+  /slices:
+    post:
+      operationId: provisionSlice
+      summary: Provision a network slice (S-NSSAI derived from SST + SD)
+      responses:
+        '201': { description: PROVISIONED }
+  /slices/{id}/activate:
+    post:
+      operationId: activateSlice
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses:
+        '200': { description: ACTIVE }
+        '409': { $ref: '#/components/responses/Problem' }
+  /exposure/qod/sessions:
+    post:
+      operationId: createQodSession
+      summary: Create a Quality-on-Demand session (CAMARA QoD)
+      responses:
+        '201': { description: ACTIVE }
+  /exposure/sim-swap/check:
+    post:
+      operationId: checkSimSwap
+      summary: SIM-swap recency and risk (CAMARA SIM Swap)
+      responses:
+        '200': { description: swappedRecently + riskLevel (HIGH/MEDIUM/LOW) }
+  /notifications:
+    post:
+      operationId: dispatchNotification
+      summary: Dispatch a notification
+      responses:
+        '202': { description: Accepted }
 components:
-  schemas:
-    DomainResource:
-      type: object
-      required: [id, schema_version, status, updated_at]
-      properties:
-        id: { type: string }
-        schema_version: { type: string, const: '1.0' }
-        status: { type: string }
-        updated_at: { type: string, format: date-time }
-        metadata:
-          type: object
-          additionalProperties: true
+  securitySchemes:
+    bearerAuth: { type: http, scheme: bearer, bearerFormat: JWT }
+  responses:
+    Problem:
+      description: RFC 9457 problem details
+      content:
+        application/problem+json:
+          schema:
+            type: object
+            required: [type, title, status]
+            properties:
+              type: { type: string }
+              title: { type: string }
+              status: { type: integer }
+              detail: { type: string }

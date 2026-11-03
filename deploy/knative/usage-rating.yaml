@@ -1,0 +1,21 @@
+# usage-rating — Knative Service: scale to zero; may be placed at a MEC edge site (same image).
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: usage-rating
+  namespace: telecom
+spec:
+  template:
+    metadata:
+      annotations:
+        autoscaling.knative.dev/min-scale: "0"
+        autoscaling.knative.dev/max-scale: "20"
+    spec:
+      containers:
+        - image: quay.io/open-industries/usage-rating:latest  # replaced by the promoted release digest
+          ports: [{ containerPort: 8080 }]
+          env:
+            - { name: HTTP_PORT, value: "8080" }
+          resources:
+            requests: { cpu: "100m", memory: "128Mi" }
+            limits: { cpu: "500m", memory: "512Mi" }
